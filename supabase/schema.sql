@@ -108,7 +108,7 @@ insert into public.site_settings (key, value) values
   ('stat_4_num','A+'), ('stat_4_lbl','Gred Sekolah'),
   ('school_name','Sekolah Kebangsaan Darau'),
   ('school_phone','088-491 326'),
-  ('school_email','sekkebdarau@gmail.com'),
+  ('school_email','digitalskdarau@gmail.com'),
   ('school_address','Peti Surat 11881, 88820 Kota Kinabalu, Sabah'),
   ('school_hours','Isnin – Jumaat · 7:30 pagi – 4:30 petang')
 on conflict (key) do nothing;
