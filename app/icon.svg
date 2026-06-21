@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1226"/>
+      <stop offset="0.5" stop-color="#172554"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.25" stop-color="#e8c860"/>
+      <stop offset="0.6" stop-color="#d4af37"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="rod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#7f9bd6"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.42" r="0.5">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="16" y="16" width="480" height="480" rx="120" fill="url(#bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="120" fill="none" stroke="#d4af37" stroke-width="9" opacity="0.65"/>
+  <circle cx="256" cy="225" r="170" fill="url(#halo)"/>
+
+  <!-- futuristic energy rays (echo crest's radiating lines) -->
+  <g stroke="#38bdf8" stroke-width="13" stroke-linecap="round" opacity="0.8">
+    <line x1="256" y1="60" x2="256" y2="100"/>
+    <line x1="150" y1="98" x2="174" y2="132"/>
+    <line x1="362" y1="98" x2="338" y2="132"/>
+    <line x1="104" y1="196" x2="146" y2="210"/>
+    <line x1="408" y1="196" x2="366" y2="210"/>
+  </g>
+
+  <!-- torch handle -->
+  <path fill="url(#rod)" d="M234 296 H278 L292 432 H220 Z"/>
+  <rect x="206" y="292" width="100" height="26" rx="12" fill="url(#rod)"/>
+
+  <!-- flame (obor) -->
+  <path filter="url(#glow)" fill="url(#flame)"
+    d="M256 96
+       C 330 176 320 246 284 286
+       C 300 262 300 234 289 218
+       C 303 258 282 300 256 308
+       C 230 300 209 258 223 218
+       C 212 234 212 262 228 286
+       C 192 246 182 176 256 96 Z"/>
+  <!-- hot core -->
+  <ellipse cx="256" cy="248" rx="22" ry="34" fill="#ffffff" opacity="0.55" filter="url(#glow)"/>
+</svg>
