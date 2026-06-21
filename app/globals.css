@@ -262,3 +262,10 @@ img{max-width:100%;display:block;}
 .cm-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;border:none;
   background:var(--blueMist);color:var(--blue);font-size:22px;cursor:pointer;font-family:inherit;line-height:1;transition:.2s;}
 .cm-close:hover{background:#dbe7ff;}
+
+/* ===== JATA SEKOLAH (ganti kotak teks "SK") ===== */
+.brand-img{width:100%;height:100%;object-fit:contain;display:block;}
+.nav-logo{background:var(--white);padding:4px;}
+.nav-logo::after{display:none;}
+.hero-logo{background:var(--white);padding:12px;font-size:0;}
+.footer-logo{background:var(--white);padding:6px;font-size:0;}

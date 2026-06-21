@@ -30,7 +30,10 @@ export default async function Home() {
       <nav className="nav" id="nav">
         <div className="nav-inner">
           <div className="nav-brand">
-            <div className="nav-logo">SK</div>
+            <div className="nav-logo">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-sekolah.jpg" alt="Jata SK Darau" className="brand-img" />
+            </div>
             <div>
               <div className="nav-name">SK Darau</div>
               <div className="nav-sub">KOTA KINABALU</div>
@@ -57,7 +60,10 @@ export default async function Home() {
         <div className="hero-stars"></div>
         <div className="hero-inner">
           <div className="hero-pill"><span className="d"></span> SEKOLAH KEBANGSAAN · SEJAK 1940</div>
-          <div className="hero-logo">SK</div>
+          <div className="hero-logo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-sekolah.jpg" alt="Jata SK Darau" className="brand-img" />
+          </div>
           <h1>Sekolah Kebangsaan<br /><span className="shine">Darau</span></h1>
           <p className="tag">&quot;Strive to Excellence: Where Every Challenge is an Opportunity to Shine.&quot;</p>
           <p className="addr">📍 Kota Kinabalu, Sabah · ☎️ {settings.school_phone}</p>
@@ -181,7 +187,10 @@ export default async function Home() {
       {/* FOOTER (id=hubungi — sebiji V16) */}
       <footer className="footer" id="hubungi">
         <div className="f-aurora"></div>
-        <div className="footer-logo">SK</div>
+        <div className="footer-logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-sekolah.jpg" alt="Jata SK Darau" className="brand-img" />
+        </div>
         <div className="footer-name">SEKOLAH KEBANGSAAN DARAU</div>
         <div className="footer-info">
           📍 {settings.school_address}<br />
