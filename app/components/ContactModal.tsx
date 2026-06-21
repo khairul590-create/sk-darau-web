@@ -37,6 +37,7 @@ export default function ContactModal() {
       email: String(fd.get("email") || "").trim(),
       phone: String(fd.get("phone") || "").trim(),
       message: String(fd.get("message") || "").trim(),
+      company: String(fd.get("company") || ""), // honeypot — must stay empty
     };
     try {
       const res = await fetch("/api/contact", {
@@ -96,9 +97,18 @@ export default function ContactModal() {
             </div>
             {status && <div className={`form-msg ${status.type}`}>{status.text}</div>}
             <form onSubmit={onSubmit}>
+              {/* Honeypot — hidden from humans, bots fill it → rejected */}
+              <input
+                type="text"
+                name="company"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+              />
               <div className="field">
                 <label htmlFor="cm-name">Nama Penuh *</label>
-                <input id="cm-name" name="name" required placeholder="Nama anda" />
+                <input id="cm-name" name="name" required maxLength={200} placeholder="Nama anda" />
               </div>
               <div className="field">
                 <label htmlFor="cm-email">E-mel *</label>
@@ -107,12 +117,13 @@ export default function ContactModal() {
                   name="email"
                   type="email"
                   required
+                  maxLength={200}
                   placeholder="emel@contoh.com"
                 />
               </div>
               <div className="field">
                 <label htmlFor="cm-phone">No. Telefon</label>
-                <input id="cm-phone" name="phone" placeholder="01x-xxx xxxx" />
+                <input id="cm-phone" name="phone" maxLength={50} placeholder="01x-xxx xxxx" />
               </div>
               <div className="field">
                 <label htmlFor="cm-msg">Mesej *</label>
@@ -120,6 +131,7 @@ export default function ContactModal() {
                   id="cm-msg"
                   name="message"
                   required
+                  maxLength={5000}
                   placeholder="Tulis pertanyaan atau mesej anda di sini..."
                 />
               </div>

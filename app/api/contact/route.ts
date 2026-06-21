@@ -8,12 +8,46 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// Simple in-memory sliding-window rate limit per IP. Serverless instances are
+// stateless across cold starts, so this stops bursts from a single warm
+// instance — it is defence-in-depth, NOT the only guard (DB CHECK constraints +
+// RLS with-check bound abuse at the database level too).
+const RL_MAX = 5; // requests
+const RL_WINDOW_MS = 10 * 60 * 1000; // per 10 minutes
+const hits = new Map<string, number[]>();
+
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  const arr = (hits.get(ip) ?? []).filter((t) => now - t < RL_WINDOW_MS);
+  arr.push(now);
+  hits.set(ip, arr);
+  if (hits.size > 5000) hits.clear(); // crude memory cap
+  return arr.length > RL_MAX;
+}
+
 export async function POST(request: Request) {
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  if (rateLimited(ip)) {
+    return NextResponse.json(
+      { error: "Terlalu banyak permintaan. Sila cuba lagi sebentar." },
+      { status: 429 }
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Permintaan tidak sah." }, { status: 400 });
+  }
+
+  // Honeypot: bots fill hidden fields. Pretend success without storing.
+  if (String(body.company ?? "").trim() !== "") {
+    return NextResponse.json({ ok: true });
   }
 
   const name = String(body.name ?? "").trim();
@@ -29,6 +63,9 @@ export async function POST(request: Request) {
   }
   if (!isValidEmail(email)) {
     return NextResponse.json({ error: "E-mel tidak sah." }, { status: 400 });
+  }
+  if (name.length > 200 || email.length > 200 || phone.length > 50) {
+    return NextResponse.json({ error: "Input terlalu panjang." }, { status: 400 });
   }
   if (message.length > 5000) {
     return NextResponse.json({ error: "Mesej terlalu panjang." }, { status: 400 });
