@@ -2,6 +2,8 @@ import { createSupabaseAnon } from "./supabase/server";
 import { isSupabaseConfigured } from "./supabase/config";
 import {
   FALLBACK_ANNOUNCEMENTS,
+  FALLBACK_DOCUMENTS,
+  FALLBACK_EVENTS,
   FALLBACK_GALLERY,
   FALLBACK_PORTAL,
   FALLBACK_SETTINGS,
@@ -10,6 +12,8 @@ import type {
   Announcement,
   GalleryItem,
   PortalLink,
+  SchoolDocument,
+  SchoolEvent,
   SiteSettings,
 } from "./types";
 
@@ -72,5 +76,37 @@ export async function getAnnouncements(): Promise<Announcement[]> {
     return data as Announcement[];
   } catch {
     return FALLBACK_ANNOUNCEMENTS;
+  }
+}
+
+export async function getEvents(): Promise<SchoolEvent[]> {
+  if (!isSupabaseConfigured) return FALLBACK_EVENTS;
+  try {
+    const sb = createSupabaseAnon();
+    const { data } = await sb
+      .from("events")
+      .select("*")
+      .eq("is_active", true)
+      .order("date", { ascending: true });
+    if (!data || data.length === 0) return FALLBACK_EVENTS;
+    return data as SchoolEvent[];
+  } catch {
+    return FALLBACK_EVENTS;
+  }
+}
+
+export async function getDocuments(): Promise<SchoolDocument[]> {
+  if (!isSupabaseConfigured) return FALLBACK_DOCUMENTS;
+  try {
+    const sb = createSupabaseAnon();
+    const { data } = await sb
+      .from("documents")
+      .select("*")
+      .eq("is_public", true)
+      .order("created_at", { ascending: false });
+    if (!data || data.length === 0) return FALLBACK_DOCUMENTS;
+    return data as SchoolDocument[];
+  } catch {
+    return FALLBACK_DOCUMENTS;
   }
 }

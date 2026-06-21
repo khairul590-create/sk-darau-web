@@ -1,4 +1,4 @@
-import type { Announcement, GalleryItem, PortalLink, SiteSettings } from "./types";
+import type { Announcement, GalleryItem, PortalLink, SchoolDocument, SchoolEvent, SiteSettings } from "./types";
 
 // Default content ported from SKDarauWebsite_V16.html.
 // Used when Supabase is not configured OR a table is empty, so the site
@@ -18,6 +18,8 @@ export const FALLBACK_SETTINGS: SiteSettings = {
   school_email: "digitalskdarau@gmail.com",
   school_address: "Peti Surat 11881, 88820 Kota Kinabalu, Sabah",
   school_hours: "Isnin – Jumaat · 7:30 pagi – 4:30 petang",
+  emergency_active: "false",
+  emergency_text: "",
 };
 
 export const FALLBACK_PORTAL: PortalLink[] = [
@@ -44,6 +46,14 @@ export const FALLBACK_ANNOUNCEMENTS: Announcement[] = [
   { id: "a5", audience: "awam", title: "Hari Terbuka & Pendaftaran Tahun 1 (2025)", chip_label: "Pendaftaran", chip_color: "#38bdf8", bar_color: "#38bdf8", date: "2024-06-01" },
   { id: "a6", audience: "awam", title: "Program Gotong-Royong Perdana", chip_label: "Komuniti", chip_color: "#0ea5e9", bar_color: "#0ea5e9", date: "2024-05-25" },
 ];
+
+export const FALLBACK_EVENTS: SchoolEvent[] = [
+  { id: "ev1", title: "Mesyuarat Agung PIBG 2026", date: "2026-07-15", end_date: null, location: "Dewan Sekolah", descr: "", is_active: true },
+  { id: "ev2", title: "Sambutan Hari Kemerdekaan ke-69", date: "2026-08-31", end_date: null, location: "Padang Sekolah", descr: "", is_active: true },
+  { id: "ev3", title: "Hari Terbuka & Pendaftaran Tahun 1 (2027)", date: "2026-10-01", end_date: null, location: "SK Darau", descr: "", is_active: true },
+];
+
+export const FALLBACK_DOCUMENTS: SchoolDocument[] = [];
 
 export const KPM_LINKS = [
   { emoji: "📊", label: "APDM", url: "https://apdm.moe.gov.my/" },

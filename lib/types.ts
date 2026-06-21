@@ -42,3 +42,23 @@ export type Message = {
 };
 
 export type SiteSettings = Record<string, string>;
+
+export type SchoolEvent = {
+  id: string;
+  title: string;
+  date: string;
+  end_date: string | null;
+  location: string;
+  descr: string;
+  is_active: boolean;
+  created_at?: string;
+};
+
+export type SchoolDocument = {
+  id: string;
+  title: string;
+  category: string;
+  file_url: string;
+  is_public: boolean;
+  created_at: string;
+};

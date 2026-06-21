@@ -1,24 +1,27 @@
 import SiteScripts from "./components/SiteScripts";
 import ContactModal from "./components/ContactModal";
+import EmergencyBanner from "./components/EmergencyBanner";
 import {
   getAnnouncements,
+  getEvents,
   getGallery,
   getPortalLinks,
   getSettings,
 } from "@/lib/data";
 import { KPM_LINKS } from "@/lib/fallback";
 import { formatDateBM } from "@/lib/format";
-import type { Announcement } from "@/lib/types";
+import type { Announcement, SchoolEvent } from "@/lib/types";
 
 // Always render fresh so admin edits show up immediately.
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [settings, portal, gallery, announcements] = await Promise.all([
+  const [settings, portal, gallery, announcements, events] = await Promise.all([
     getSettings(),
     getPortalLinks(),
     getGallery(),
     getAnnouncements(),
+    getEvents(),
   ]);
 
   const ibuBapa = announcements.filter((a) => a.audience === "ibu_bapa");
@@ -26,6 +29,11 @@ export default async function Home() {
 
   return (
     <>
+      <EmergencyBanner
+        active={settings.emergency_active ?? "false"}
+        text={settings.emergency_text ?? ""}
+      />
+
       {/* NAV */}
       <nav className="nav" id="nav">
         <div className="nav-inner">
@@ -184,6 +192,23 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ACARA SEKOLAH */}
+      {events.length > 0 && (
+        <section className="events-section" id="acara">
+          <div className="events-section section-inner">
+            <div className="sec-head reveal">
+              <div className="sec-kicker">Jadual Aktiviti</div>
+              <h2 className="sec-title">Acara <span className="g">Sekolah</span></h2>
+            </div>
+            <div className="events-list">
+              {events.map((ev) => (
+                <EventCard key={ev.id} event={ev} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* FOOTER (id=hubungi — sebiji V16) */}
       <footer className="footer" id="hubungi">
         <div className="f-aurora"></div>
@@ -196,7 +221,10 @@ export default async function Home() {
           📍 {settings.school_address}<br />
           ☎️ Tel / Faks: {settings.school_phone}<br />
           📧 {settings.school_email}<br />
-          🕐 {settings.school_hours}
+          🕐 {settings.school_hours}<br />
+          <a href="/dokumen" style={{ color: "var(--gold)", fontWeight: 700, marginTop: 6, display: "inline-block" }}>
+            📥 Muat Turun Pekeliling & Dokumen →
+          </a>
         </div>
         <div className="footer-div"></div>
         <div className="footer-copy">Hak Cipta Terpelihara © 2024 SK Darau Kota Kinabalu</div>
@@ -204,6 +232,29 @@ export default async function Home() {
 
       <SiteScripts />
     </>
+  );
+}
+
+const BM_MON = ["Jan","Feb","Mac","Apr","Mei","Jun","Jul","Ogos","Sep","Okt","Nov","Dis"];
+
+function EventCard({ event }: { event: SchoolEvent }) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(event.date);
+  const day = m ? Number(m[3]) : "";
+  const mon = m ? (BM_MON[Number(m[2]) - 1] ?? "") : "";
+  return (
+    <div className="event-card reveal">
+      <div className="event-date-box">
+        <div className="event-date-day">{day}</div>
+        <div className="event-date-mon">{mon}</div>
+      </div>
+      <div className="event-info">
+        <div className="event-title">{event.title}</div>
+        {event.location && (
+          <div className="event-loc">📍 {event.location}</div>
+        )}
+        {event.descr && <div className="event-desc">{event.descr}</div>}
+      </div>
+    </div>
   );
 }
 
