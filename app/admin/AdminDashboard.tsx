@@ -551,13 +551,16 @@ function MesejTab({ sb, messages, reload, flash }: {
 function TetapanTab({ sb, portal, settings, reload, flash }: {
   sb: SB; portal: PortalLink[]; settings: Record<string, string>; reload: () => Promise<void>; flash: (t: string) => void;
 }) {
+  const emptyCard = { icon: "🔗", title: "", descr: "", url: "", gradient: GRADIENTS[0] };
   const [s, setS] = useState<Record<string, string>>(settings);
   const [p, setP] = useState<PortalLink[]>(portal);
+  const [newCard, setNewCard] = useState(emptyCard);
+  const [busy, setBusy] = useState(false);
   useEffect(() => { setS(settings); }, [settings]);
   useEffect(() => { setP(portal); }, [portal]);
   const setKey = (k: string, v: string) => setS((o) => ({ ...o, [k]: v }));
-  const setPortalUrl = (id: string, url: string) =>
-    setP((arr) => arr.map((x) => (x.id === id ? { ...x, url } : x)));
+  const setCard = (id: string, k: keyof PortalLink, v: string) =>
+    setP((arr) => arr.map((x) => (x.id === id ? { ...x, [k]: v } : x)));
 
   async function saveSettings() {
     const rows = Object.entries(s).map(([key, value]) => ({ key, value }));
@@ -565,11 +568,27 @@ function TetapanTab({ sb, portal, settings, reload, flash }: {
     if (error) return flash("Gagal simpan tetapan.");
     flash("Tetapan disimpan."); await reload();
   }
-  async function savePortal() {
-    for (const link of p) {
-      await sb.from("portal_links").update({ url: link.url }).eq("id", link.id);
-    }
-    flash("Pautan portal disimpan."); await reload();
+  async function addCard() {
+    if (!newCard.title.trim()) return flash("Sila isi tajuk kad.");
+    setBusy(true);
+    const sort_order = (p.at(-1)?.sort_order ?? 0) + 1;
+    const { error } = await sb.from("portal_links").insert({ ...newCard, sort_order });
+    setBusy(false);
+    if (error) return flash("Gagal tambah kad.");
+    flash("Kad portal ditambah."); setNewCard(emptyCard); await reload();
+  }
+  async function saveCard(link: PortalLink) {
+    const { error } = await sb.from("portal_links").update({
+      icon: link.icon, title: link.title, descr: link.descr, url: link.url, gradient: link.gradient,
+    }).eq("id", link.id);
+    if (error) return flash("Gagal simpan kad.");
+    flash("Kad disimpan."); await reload();
+  }
+  async function deleteCard(id: string) {
+    if (!confirm("Padam kad portal ini? Tak boleh undo.")) return;
+    const { error } = await sb.from("portal_links").delete().eq("id", id);
+    if (error) return flash("Gagal padam kad.");
+    flash("Kad dipadam."); await reload();
   }
 
   const statFields = [1, 2, 3, 4];
@@ -584,14 +603,68 @@ function TetapanTab({ sb, portal, settings, reload, flash }: {
     <>
       <div className="admin-card">
         <h2>Pautan Portal Sekolah</h2>
-        <div className="muted-note" style={{ marginBottom: 12 }}>Tetapkan URL untuk setiap kad portal. Biar kosong jika belum ada.</div>
-        {p.map((link) => (
-          <div className="field" key={link.id}>
-            <label>{link.icon} {link.title}</label>
-            <input value={link.url} onChange={(e) => setPortalUrl(link.id, e.target.value)} placeholder="https://..." />
+        <div className="muted-note" style={{ marginBottom: 12 }}>Tambah, edit atau padam kad dalam section &quot;Portal Sekolah&quot;. Biar URL kosong jika belum ada.</div>
+
+        {/* Tambah kad baru */}
+        <div style={{ border: "1px dashed var(--line, #d7e0ee)", borderRadius: 12, padding: 14, marginBottom: 18 }}>
+          <h3 style={{ margin: "0 0 10px", fontSize: 15 }}>➕ Tambah Kad Baru</h3>
+          <div className="admin-row">
+            <div className="field" style={{ maxWidth: 96 }}>
+              <label>Ikon</label>
+              <input value={newCard.icon} onChange={(e) => setNewCard((c) => ({ ...c, icon: e.target.value }))} placeholder="🔗" />
+            </div>
+            <div className="field">
+              <label>Tajuk</label>
+              <input value={newCard.title} onChange={(e) => setNewCard((c) => ({ ...c, title: e.target.value }))} placeholder="cth: Sistem Tempahan Dewan" />
+            </div>
+          </div>
+          <div className="field">
+            <label>Penerangan</label>
+            <input value={newCard.descr} onChange={(e) => setNewCard((c) => ({ ...c, descr: e.target.value }))} placeholder="cth: Tempah kemudahan sekolah dalam talian" />
+          </div>
+          <div className="field">
+            <label>URL (pautan web app)</label>
+            <input value={newCard.url} onChange={(e) => setNewCard((c) => ({ ...c, url: e.target.value }))} placeholder="https://..." />
+          </div>
+          <div className="field">
+            <label>Warna Kad</label>
+            <GradientPicker value={newCard.gradient} onChange={(g) => setNewCard((c) => ({ ...c, gradient: g }))} />
+          </div>
+          <button className="btn btn-submit btn-sm" onClick={addCard} disabled={busy}>{busy ? "Menambah..." : "Tambah Kad"}</button>
+        </div>
+
+        {/* Kad sedia ada */}
+        <h3 style={{ margin: "0 0 10px", fontSize: 15 }}>Kad Sedia Ada ({p.length})</h3>
+        {p.length === 0 ? <div className="admin-empty">Tiada kad.</div> : p.map((link) => (
+          <div key={link.id} style={{ border: "1px solid var(--line, #e2e8f0)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div className="admin-row">
+              <div className="field" style={{ maxWidth: 96 }}>
+                <label>Ikon</label>
+                <input value={link.icon} onChange={(e) => setCard(link.id, "icon", e.target.value)} />
+              </div>
+              <div className="field">
+                <label>Tajuk</label>
+                <input value={link.title} onChange={(e) => setCard(link.id, "title", e.target.value)} />
+              </div>
+            </div>
+            <div className="field">
+              <label>Penerangan</label>
+              <input value={link.descr} onChange={(e) => setCard(link.id, "descr", e.target.value)} />
+            </div>
+            <div className="field">
+              <label>URL</label>
+              <input value={link.url} onChange={(e) => setCard(link.id, "url", e.target.value)} placeholder="https://..." />
+            </div>
+            <div className="field">
+              <label>Warna Kad</label>
+              <GradientPicker value={link.gradient} onChange={(g) => setCard(link.id, "gradient", g)} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-submit btn-sm" onClick={() => saveCard(link)}>Simpan</button>
+              <button className="btn btn-danger btn-sm" onClick={() => deleteCard(link.id)}>Padam</button>
+            </div>
           </div>
         ))}
-        <button className="btn btn-submit btn-sm" onClick={savePortal}>Simpan Pautan</button>
       </div>
 
       <div className="admin-card">
@@ -635,5 +708,22 @@ function TetapanTab({ sb, portal, settings, reload, flash }: {
         <button className="btn btn-submit btn-sm" onClick={saveSettings}>Simpan Tetapan</button>
       </div>
     </>
+  );
+}
+
+/* ---------------- GRADIENT PICKER ---------------- */
+function GradientPicker({ value, onChange }: { value: string; onChange: (g: string) => void }) {
+  // Swatch + dropdown. If the card's current gradient isn't a preset, keep it
+  // as an option so nothing is lost.
+  const opts = GRADIENTS.includes(value) ? GRADIENTS : [value, ...GRADIENTS];
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <span style={{ width: 36, height: 36, borderRadius: 8, background: value, flexShrink: 0, border: "1px solid var(--line, #e2e8f0)" }} />
+      <select value={value} onChange={(e) => onChange(e.target.value)} style={{ flex: 1 }}>
+        {opts.map((g) => (
+          <option key={g} value={g}>{GRADIENTS.includes(g) ? `Warna ${GRADIENTS.indexOf(g) + 1}` : "Warna semasa"}</option>
+        ))}
+      </select>
+    </div>
   );
 }
