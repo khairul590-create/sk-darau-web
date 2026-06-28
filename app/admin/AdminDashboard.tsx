@@ -158,8 +158,12 @@ function MaklumanTab({ sb, anns, reload, flash }: {
 
   async function save() {
     if (!form.title.trim()) return flash("Sila isi tajuk.");
-    // Empty date string is invalid for a Postgres date column → send null.
-    const payload = { ...form, expires_at: form.expires_at || null };
+    // Only send expires_at when actually set. Keeps add/edit working even
+    // before the expires_at column migration is run; sending the key for a
+    // missing column would error.
+    const payload: Record<string, unknown> = { ...form };
+    if (form.expires_at) payload.expires_at = form.expires_at;
+    else delete payload.expires_at;
     if (editId) {
       const { error } = await sb.from("announcements").update(payload).eq("id", editId);
       if (error) return flash("Gagal kemaskini.");
