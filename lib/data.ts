@@ -73,7 +73,11 @@ export async function getAnnouncements(): Promise<Announcement[]> {
       .select("*")
       .order("date", { ascending: false });
     if (!data || data.length === 0) return FALLBACK_ANNOUNCEMENTS;
-    return data as Announcement[];
+    // Auto-archive: hide announcements whose expiry date has passed.
+    const today = new Date().toISOString().slice(0, 10);
+    return (data as Announcement[]).filter(
+      (a) => !a.expires_at || a.expires_at >= today
+    );
   } catch {
     return FALLBACK_ANNOUNCEMENTS;
   }

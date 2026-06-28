@@ -6,6 +6,7 @@ export type Announcement = {
   chip_color: string;
   bar_color: string;
   date: string; // ISO date (YYYY-MM-DD)
+  expires_at?: string | null; // optional auto-archive date; null = never expires
   created_at?: string;
 };
 

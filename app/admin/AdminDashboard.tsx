@@ -24,6 +24,31 @@ const GRADIENTS = [
   "linear-gradient(155deg,#818cf8,#4f46e5)",
 ];
 
+// Resize/compress an image in the browser before upload so staff can snap &
+// upload phone photos without worrying about size. Falls back to the original
+// file if anything goes wrong (e.g. unsupported format).
+async function compressImage(file: File, maxW = 1600, quality = 0.82): Promise<Blob> {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxW / bitmap.width);
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const blob: Blob | null = await new Promise((res) =>
+      canvas.toBlob((b) => res(b), "image/jpeg", quality)
+    );
+    return blob ?? file;
+  } catch {
+    return file;
+  }
+}
+
 export default function AdminDashboard({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const sb = useMemo(() => createSupabaseBrowser(), []);
@@ -123,20 +148,24 @@ function MaklumanTab({ sb, anns, reload, flash }: {
   const empty = {
     audience: "ibu_bapa" as Announcement["audience"],
     title: "", chip_label: "Makluman", chip_color: "#2563eb", bar_color: "#2563eb",
-    date: new Date().toISOString().slice(0, 10),
+    date: new Date().toISOString().slice(0, 10), expires_at: "",
   };
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<string | null>(null);
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const applyPreset = (label: string, color: string) =>
+    setForm((f) => ({ ...f, chip_label: label, chip_color: color, bar_color: color }));
 
   async function save() {
     if (!form.title.trim()) return flash("Sila isi tajuk.");
+    // Empty date string is invalid for a Postgres date column → send null.
+    const payload = { ...form, expires_at: form.expires_at || null };
     if (editId) {
-      const { error } = await sb.from("announcements").update(form).eq("id", editId);
+      const { error } = await sb.from("announcements").update(payload).eq("id", editId);
       if (error) return flash("Gagal kemaskini.");
       flash("Makluman dikemaskini.");
     } else {
-      const { error } = await sb.from("announcements").insert(form);
+      const { error } = await sb.from("announcements").insert(payload);
       if (error) return flash("Gagal tambah.");
       flash("Makluman ditambah.");
     }
@@ -144,7 +173,7 @@ function MaklumanTab({ sb, anns, reload, flash }: {
   }
   function edit(a: Announcement) {
     setEditId(a.id);
-    setForm({ audience: a.audience, title: a.title, chip_label: a.chip_label, chip_color: a.chip_color, bar_color: a.bar_color, date: a.date });
+    setForm({ audience: a.audience, title: a.title, chip_label: a.chip_label, chip_color: a.chip_color, bar_color: a.bar_color, date: a.date, expires_at: a.expires_at ?? "" });
   }
   async function del(id: string) {
     if (!confirm("Padam makluman ini?")) return;
@@ -174,6 +203,30 @@ function MaklumanTab({ sb, anns, reload, flash }: {
           <label>Tajuk Makluman</label>
           <input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="cth: Mesyuarat Agung PIBG 2024" />
         </div>
+        <div className="field">
+          <label>Templat Pantas (klik untuk isi label + warna)</label>
+          <div className="preset-row">
+            {[
+              { label: "Takziah", color: "#475569" },
+              { label: "Hari Lahir", color: "#db2777" },
+              { label: "Cuti", color: "#0ea5e9" },
+              { label: "Mesyuarat", color: "#6366f1" },
+              { label: "Pembayaran", color: "#d4af37" },
+              { label: "Pendaftaran", color: "#38bdf8" },
+              { label: "Penting", color: "#ef4444" },
+            ].map((p) => (
+              <button
+                type="button"
+                key={p.label}
+                className="preset-chip"
+                style={{ background: p.color }}
+                onClick={() => applyPreset(p.label, p.color)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="admin-row">
           <div className="field">
             <label>Label (chip)</label>
@@ -183,6 +236,11 @@ function MaklumanTab({ sb, anns, reload, flash }: {
             <label>Warna Chip</label>
             <input type="color" value={form.chip_color} onChange={(e) => { set("chip_color", e.target.value); set("bar_color", e.target.value); }} />
           </div>
+        </div>
+        <div className="field">
+          <label>Tarikh Tamat (pilihan — auto-sorok lepas tarikh ini)</label>
+          <input type="date" value={form.expires_at} onChange={(e) => set("expires_at", e.target.value)} />
+          <div className="muted-note">Biar kosong = kekal selamanya. Berguna untuk makluman sementara (cuti, pendaftaran).</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <button className="btn btn-submit btn-sm" onClick={save}>{editId ? "Simpan Perubahan" : "Tambah Makluman"}</button>
@@ -201,7 +259,12 @@ function MaklumanTab({ sb, anns, reload, flash }: {
                     <span className="ann-chip" style={{ background: a.chip_color, marginRight: 8 }}>{a.chip_label}</span>
                     {a.title}
                   </div>
-                  <div className="al-sub">{a.audience === "ibu_bapa" ? "Ibu Bapa" : "Awam"} · {formatDateBM(a.date)}</div>
+                  <div className="al-sub">
+                    {a.audience === "ibu_bapa" ? "Ibu Bapa" : "Awam"} · {formatDateBM(a.date)}
+                    {a.expires_at && (a.expires_at < new Date().toISOString().slice(0, 10)
+                      ? <span style={{ color: "#b91c1c", fontWeight: 700 }}> · ⚠ Tamat (disorok)</span>
+                      : <span style={{ color: "#92733a" }}> · Tamat {formatDateBM(a.expires_at)}</span>)}
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button className="btn btn-sm btn-ghost" onClick={() => edit(a)}>Edit</button>
@@ -232,9 +295,9 @@ function GaleriTab({ sb, gallery, reload, flash }: {
     try {
       let image_url: string | null = null;
       if (file) {
-        const ext = file.name.split(".").pop() || "jpg";
-        const path = `${Date.now()}-${Math.round(Math.random() * 1e6)}.${ext}`;
-        const up = await sb.storage.from("gallery").upload(path, file, { upsert: false });
+        const compressed = await compressImage(file); // shrink phone photos before upload
+        const path = `${Date.now()}-${Math.round(Math.random() * 1e6)}.jpg`;
+        const up = await sb.storage.from("gallery").upload(path, compressed, { upsert: false, contentType: "image/jpeg" });
         if (up.error) { flash("Gagal muat naik gambar."); setBusy(false); return; }
         image_url = sb.storage.from("gallery").getPublicUrl(path).data.publicUrl;
       }

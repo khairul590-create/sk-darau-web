@@ -1,6 +1,7 @@
 import SiteScripts from "./components/SiteScripts";
 import ContactModal from "./components/ContactModal";
 import EmergencyBanner from "./components/EmergencyBanner";
+import ShareWA from "./components/ShareWA";
 import {
   getAnnouncements,
   getEvents,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/data";
 import { KPM_LINKS } from "@/lib/fallback";
 import { formatDateBM } from "@/lib/format";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import type { Announcement, SchoolEvent } from "@/lib/types";
 
 // Always render fresh so admin edits show up immediately.
@@ -253,6 +255,9 @@ function EventCard({ event }: { event: SchoolEvent }) {
           <div className="event-loc">📍 {event.location}</div>
         )}
         {event.descr && <div className="event-desc">{event.descr}</div>}
+        <ShareWA
+          text={`*Acara Sekolah*: ${event.title}\n🗓️ ${formatDateBM(event.date)}${event.location ? `\n📍 ${event.location}` : ""}\n— ${SITE_NAME}\n${SITE_URL}`}
+        />
       </div>
     </div>
   );
@@ -282,6 +287,9 @@ function AnnCard({
                 {a.chip_label}
               </span>
               <span className="ann-date">{formatDateBM(a.date)}</span>
+              <ShareWA
+                text={`*${a.chip_label}*: ${a.title} (${formatDateBM(a.date)})\n— ${SITE_NAME}\n${SITE_URL}`}
+              />
             </div>
           </div>
         ))
