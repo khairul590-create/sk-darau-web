@@ -11,9 +11,22 @@ import type {
   PortalLink,
   SchoolDocument,
   SchoolEvent,
+  Writing,
 } from "@/lib/types";
 
-type Tab = "makluman" | "galeri" | "acara" | "dokumen" | "mesej" | "tetapan";
+type Tab = "makluman" | "galeri" | "acara" | "tulisan" | "dokumen" | "mesej" | "tetapan";
+
+// Jana slug mesra-URL dari tajuk: kecilkan, buang simbol, ruang → "-".
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80) || "tulisan";
+}
 
 const GRADIENTS = [
   "linear-gradient(145deg,#3b82f6,#1d4ed8)",
@@ -57,6 +70,7 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
   const [anns, setAnns] = useState<Announcement[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [events, setEvents] = useState<SchoolEvent[]>([]);
+  const [writings, setWritings] = useState<Writing[]>([]);
   const [docs, setDocs] = useState<SchoolDocument[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [portal, setPortal] = useState<PortalLink[]>([]);
@@ -69,10 +83,11 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
   };
 
   const loadAll = useCallback(async () => {
-    const [a, g, ev, d, m, p, s] = await Promise.all([
+    const [a, g, ev, w, d, m, p, s] = await Promise.all([
       sb.from("announcements").select("*").order("date", { ascending: false }),
       sb.from("gallery").select("*").order("sort_order", { ascending: true }),
       sb.from("events").select("*").order("date", { ascending: true }),
+      sb.from("writings").select("*").order("publish_date", { ascending: false }),
       sb.from("documents").select("*").order("created_at", { ascending: false }),
       sb.from("messages").select("*").order("created_at", { ascending: false }),
       sb.from("portal_links").select("*").order("sort_order", { ascending: true }),
@@ -81,6 +96,7 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
     if (a.data) setAnns(a.data as Announcement[]);
     if (g.data) setGallery(g.data as GalleryItem[]);
     if (ev.data) setEvents(ev.data as SchoolEvent[]);
+    if (w.data) setWritings(w.data as Writing[]);
     if (d.data) setDocs(d.data as SchoolDocument[]);
     if (m.data) setMessages(m.data as Message[]);
     if (p.data) setPortal(p.data as PortalLink[]);
@@ -124,6 +140,7 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
         <button className={`admin-tab${tab === "makluman" ? " active" : ""}`} onClick={() => setTab("makluman")}>📢 Makluman</button>
         <button className={`admin-tab${tab === "galeri" ? " active" : ""}`} onClick={() => setTab("galeri")}>🖼️ Galeri</button>
         <button className={`admin-tab${tab === "acara" ? " active" : ""}`} onClick={() => setTab("acara")}>📅 Acara</button>
+        <button className={`admin-tab${tab === "tulisan" ? " active" : ""}`} onClick={() => setTab("tulisan")}>✍️ Tulisan</button>
         <button className={`admin-tab${tab === "dokumen" ? " active" : ""}`} onClick={() => setTab("dokumen")}>📄 Dokumen</button>
         <button className={`admin-tab${tab === "mesej" ? " active" : ""}`} onClick={() => setTab("mesej")}>✉️ Mesej{unread ? ` (${unread})` : ""}</button>
         <button className={`admin-tab${tab === "tetapan" ? " active" : ""}`} onClick={() => setTab("tetapan")}>⚙️ Tetapan</button>
@@ -132,6 +149,7 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
       {tab === "makluman" && <MaklumanTab sb={sb} anns={anns} reload={loadAll} flash={flash} />}
       {tab === "galeri" && <GaleriTab sb={sb} gallery={gallery} reload={loadAll} flash={flash} />}
       {tab === "acara" && <AcaraTab sb={sb} events={events} reload={loadAll} flash={flash} />}
+      {tab === "tulisan" && <TulisanTab sb={sb} writings={writings} reload={loadAll} flash={flash} />}
       {tab === "dokumen" && <DokumenTab sb={sb} docs={docs} reload={loadAll} flash={flash} />}
       {tab === "mesej" && <MesejTab sb={sb} messages={messages} reload={loadAll} flash={flash} />}
       {tab === "tetapan" && <TetapanTab sb={sb} portal={portal} settings={settings} reload={loadAll} flash={flash} />}
@@ -478,6 +496,215 @@ function AcaraTab({ sb, events, reload, flash }: {
                 <div style={{ display: "flex", gap: 8 }}>
                   <button className="btn btn-sm btn-ghost" onClick={() => edit(ev)}>Edit</button>
                   <button className="btn btn-sm btn-danger" onClick={() => del(ev.id)}>Padam</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ---------------- TULISAN ---------------- */
+function TulisanTab({ sb, writings, reload, flash }: {
+  sb: SB; writings: Writing[]; reload: () => Promise<void>; flash: (t: string) => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const empty = {
+    author: "", title: "", excerpt: "",
+    type: "teks" as "teks" | "pautan",
+    content: "", external_url: "",
+    emoji: "✍️", gradient: GRADIENTS[0],
+    publish_date: today, is_published: true,
+  };
+  const [form, setForm] = useState(empty);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function save() {
+    if (!form.author.trim()) return flash("Sila isi nama penulis.");
+    if (!form.title.trim()) return flash("Sila isi tajuk.");
+    if (form.type === "teks" && !form.content.trim()) return flash("Sila isi kandungan tulisan.");
+    if (form.type === "pautan" && !form.external_url.trim()) return flash("Sila isi pautan luar.");
+    setBusy(true);
+    try {
+      // Gambar pilihan — muat naik & compress macam galeri.
+      let image_url: string | null = editId
+        ? (writings.find((w) => w.id === editId)?.image_url ?? null)
+        : null;
+      if (file) {
+        const compressed = await compressImage(file);
+        const path = `${Date.now()}-${Math.round(Math.random() * 1e6)}.jpg`;
+        const up = await sb.storage.from("writings").upload(path, compressed, { upsert: false, contentType: "image/jpeg" });
+        if (up.error) { flash("Gagal muat naik gambar."); setBusy(false); return; }
+        image_url = sb.storage.from("writings").getPublicUrl(path).data.publicUrl;
+      }
+      const isLink = form.type === "pautan";
+      const payload = {
+        author: form.author.trim(),
+        title: form.title.trim(),
+        excerpt: form.excerpt.trim(),
+        content: isLink ? "" : form.content,
+        external_url: isLink ? form.external_url.trim() : null,
+        image_url,
+        emoji: form.emoji || "✍️",
+        gradient: form.gradient,
+        is_published: form.is_published,
+        publish_date: form.publish_date,
+      };
+      if (editId) {
+        const { error } = await sb.from("writings").update(payload).eq("id", editId);
+        if (error) { flash("Gagal kemaskini."); setBusy(false); return; }
+        flash("Tulisan dikemaskini.");
+      } else {
+        // Jana slug unik dari tajuk (tambah suffix jika berlaga).
+        const base = slugify(form.title);
+        const taken = new Set(writings.map((w) => w.slug));
+        let slug = base;
+        let n = 2;
+        while (taken.has(slug)) slug = `${base}-${n++}`;
+        const sort_order = (writings.at(0)?.sort_order ?? 0) + 1;
+        const { error } = await sb.from("writings").insert({ ...payload, slug, sort_order });
+        if (error) { flash("Gagal tambah."); setBusy(false); return; }
+        flash("Tulisan ditambah.");
+      }
+      setForm(empty); setEditId(null); setFile(null);
+      const inp = document.getElementById("tulisan-file-input") as HTMLInputElement;
+      if (inp) inp.value = "";
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function edit(w: Writing) {
+    setEditId(w.id);
+    setFile(null);
+    setForm({
+      author: w.author, title: w.title, excerpt: w.excerpt,
+      type: w.external_url ? "pautan" : "teks",
+      content: w.content ?? "", external_url: w.external_url ?? "",
+      emoji: w.emoji || "✍️", gradient: w.gradient || GRADIENTS[0],
+      publish_date: w.publish_date, is_published: w.is_published,
+    });
+  }
+
+  async function del(w: Writing) {
+    if (!confirm("Padam tulisan ini?")) return;
+    if (w.image_url) {
+      const path = w.image_url.split("/writings/")[1];
+      if (path) await sb.storage.from("writings").remove([decodeURIComponent(path)]);
+    }
+    const { error } = await sb.from("writings").delete().eq("id", w.id);
+    if (error) return flash("Gagal padam.");
+    flash("Tulisan dipadam."); await reload();
+  }
+
+  return (
+    <>
+      <div className="admin-card">
+        <h2>{editId ? "Edit Tulisan" : "Tambah Tulisan"}</h2>
+        <div className="muted-note" style={{ marginBottom: 12 }}>Tulisan tersiar di halaman <strong>/tulisan</strong>. Pilih taip teks penuh, atau kongsi pautan ke blog/website luar.</div>
+        <div className="admin-row">
+          <div className="field">
+            <label>Nama Penulis</label>
+            <input value={form.author} onChange={(e) => set("author", e.target.value)} placeholder="cth: Cikgu Aminah" />
+          </div>
+          <div className="field">
+            <label>Tarikh Siar</label>
+            <input type="date" value={form.publish_date} onChange={(e) => set("publish_date", e.target.value)} />
+          </div>
+        </div>
+        <div className="field">
+          <label>Tajuk</label>
+          <input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="cth: Pengalaman Mengajar di Pedalaman" />
+        </div>
+        <div className="field">
+          <label>Ringkasan (kad — pilihan)</label>
+          <input value={form.excerpt} onChange={(e) => set("excerpt", e.target.value)} placeholder="Ayat pendek tarik perhatian pembaca" />
+        </div>
+        <div className="field">
+          <label>Jenis Tulisan</label>
+          <select value={form.type} onChange={(e) => set("type", e.target.value)}>
+            <option value="teks">Teks penuh (taip di sini)</option>
+            <option value="pautan">Pautan luar (blog / website lain)</option>
+          </select>
+        </div>
+        {form.type === "teks" ? (
+          <div className="field">
+            <label>Kandungan</label>
+            <textarea
+              value={form.content}
+              onChange={(e) => set("content", e.target.value)}
+              rows={10}
+              placeholder="Taip atau tampal tulisan penuh di sini. Tekan Enter untuk perenggan baru."
+              style={{ width: "100%", resize: "vertical", fontFamily: "inherit", fontSize: 14, lineHeight: 1.6, padding: 10 }}
+            />
+            <div className="muted-note">Setiap baris kosong jadi perenggan baru di website.</div>
+          </div>
+        ) : (
+          <div className="field">
+            <label>Pautan Luar (URL)</label>
+            <input value={form.external_url} onChange={(e) => set("external_url", e.target.value)} placeholder="https://blog-cikgu.com/artikel-saya" />
+            <div className="muted-note">Kad tulisan akan terus lompat ke pautan ini bila diklik.</div>
+          </div>
+        )}
+        <div className="admin-row">
+          <div className="field">
+            <label>Gambar Utama (pilihan — JPG/PNG)</label>
+            <input id="tulisan-file-input" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <div className="muted-note">Jika tiada gambar, emoji + warna latar digunakan.</div>
+          </div>
+          <div className="field" style={{ maxWidth: 120 }}>
+            <label>Emoji</label>
+            <input value={form.emoji} onChange={(e) => set("emoji", e.target.value)} placeholder="✍️" />
+          </div>
+        </div>
+        <div className="field">
+          <label>Warna Kad</label>
+          <GradientPicker value={form.gradient} onChange={(g) => set("gradient", g)} />
+        </div>
+        <div className="field">
+          <label>Status</label>
+          <select value={form.is_published ? "true" : "false"} onChange={(e) => set("is_published", e.target.value === "true")}>
+            <option value="true">Siar (papar di website)</option>
+            <option value="false">Draf (sorok)</option>
+          </select>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="btn btn-submit btn-sm" onClick={save} disabled={busy}>{busy ? "Menyimpan..." : editId ? "Simpan Perubahan" : "Tambah Tulisan"}</button>
+          {editId && <button className="btn btn-ghost btn-sm" onClick={() => { setEditId(null); setForm(empty); setFile(null); }}>Batal</button>}
+        </div>
+      </div>
+
+      <div className="admin-card">
+        <h2>Senarai Tulisan ({writings.length})</h2>
+        {writings.length === 0 ? <div className="admin-empty">Tiada tulisan.</div> : (
+          <ul className="admin-list">
+            {writings.map((w) => (
+              <li key={w.id}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 46, height: 46, borderRadius: 10, background: w.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, overflow: "hidden", flexShrink: 0 }}>
+                    {w.image_url ? <img src={w.image_url} alt={w.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : w.emoji}
+                  </div>
+                  <div>
+                    <div className="al-main">
+                      {!w.is_published && <span className="pill-unread" style={{ background: "#94a3b8" }}></span>}
+                      {w.title}
+                    </div>
+                    <div className="al-sub">
+                      {w.author} · {formatDateBM(w.publish_date)}
+                      {w.external_url ? " · 🔗 Pautan luar" : " · 📝 Teks"}
+                      {!w.is_published && <span style={{ color: "#b91c1c", fontWeight: 700 }}> · Draf</span>}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn btn-sm btn-ghost" onClick={() => edit(w)}>Edit</button>
+                  <button className="btn btn-sm btn-danger" onClick={() => del(w)}>Padam</button>
                 </div>
               </li>
             ))}

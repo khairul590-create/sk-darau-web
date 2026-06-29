@@ -54,6 +54,7 @@ export default async function Home() {
             <a href="#akses">Portal</a>
             <a href="#galeri">Galeri</a>
             <a href="#makluman">Makluman</a>
+            <a href="/tulisan">Tulisan</a>
             <a href="#hubungi">Hubungi</a>
           </div>
           <button className="nav-burger" id="burger" aria-label="Menu">
@@ -226,6 +227,9 @@ export default async function Home() {
           🕐 {settings.school_hours}<br />
           <a href="/dokumen" style={{ color: "var(--gold)", fontWeight: 700, marginTop: 6, display: "inline-block" }}>
             📥 Muat Turun Pekeliling & Dokumen →
+          </a><br />
+          <a href="/tulisan" style={{ color: "var(--gold)", fontWeight: 700, marginTop: 4, display: "inline-block" }}>
+            ✍️ Tulisan Guru →
           </a>
         </div>
         <div className="footer-div"></div>

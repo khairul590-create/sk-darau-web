@@ -7,6 +7,7 @@ import {
   FALLBACK_GALLERY,
   FALLBACK_PORTAL,
   FALLBACK_SETTINGS,
+  FALLBACK_WRITINGS,
 } from "./fallback";
 import type {
   Announcement,
@@ -15,6 +16,7 @@ import type {
   SchoolDocument,
   SchoolEvent,
   SiteSettings,
+  Writing,
 } from "./types";
 
 // Each getter returns DB content when Supabase is configured and has rows,
@@ -112,5 +114,37 @@ export async function getDocuments(): Promise<SchoolDocument[]> {
     return data as SchoolDocument[];
   } catch {
     return FALLBACK_DOCUMENTS;
+  }
+}
+
+export async function getWritings(): Promise<Writing[]> {
+  if (!isSupabaseConfigured) return FALLBACK_WRITINGS;
+  try {
+    const sb = createSupabaseAnon();
+    const { data } = await sb
+      .from("writings")
+      .select("*")
+      .eq("is_published", true)
+      .order("publish_date", { ascending: false });
+    if (!data || data.length === 0) return FALLBACK_WRITINGS;
+    return data as Writing[];
+  } catch {
+    return FALLBACK_WRITINGS;
+  }
+}
+
+export async function getWritingBySlug(slug: string): Promise<Writing | null> {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const sb = createSupabaseAnon();
+    const { data } = await sb
+      .from("writings")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
+    return (data as Writing) ?? null;
+  } catch {
+    return null;
   }
 }

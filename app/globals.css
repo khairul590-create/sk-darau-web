@@ -328,6 +328,39 @@ img{max-width:100%;display:block;}
   font-weight:700;font-size:14px;margin-bottom:24px;}
 .dokumen-back:hover{text-decoration:underline;}
 
+/* ===== Tulisan Guru ===== */
+.tulisan-inner{max-width:980px;margin:0 auto;}
+.tulisan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:22px;}
+.tw-card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--line,#e2e8f0);
+  border-radius:16px;overflow:hidden;text-decoration:none;color:inherit;
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.tw-card:hover{transform:translateY(-4px);border-color:var(--blue);box-shadow:0 12px 30px rgba(37,99,235,.14);}
+.tw-media{position:relative;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.tw-img{width:100%;height:100%;object-fit:cover;}
+.tw-em{font-size:48px;}
+.tw-go{position:absolute;top:10px;right:12px;width:30px;height:30px;border-radius:50%;
+  background:rgba(255,255,255,.92);color:var(--blueDark);display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:15px;}
+.tw-body{padding:16px 18px;display:flex;flex-direction:column;gap:8px;flex:1;}
+.tw-title{font-size:17px;font-weight:800;color:var(--blueDark);line-height:1.3;letter-spacing:-.3px;}
+.tw-excerpt{font-size:13.5px;color:var(--muted);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.tw-meta{margin-top:auto;display:flex;justify-content:space-between;align-items:center;
+  gap:8px;font-size:12px;padding-top:6px;border-top:1px solid var(--line,#eef2f7);}
+.tw-author{font-weight:700;color:var(--blue);}
+.tw-date{color:#94a3b8;}
+
+/* ===== Artikel Tulisan (detail) ===== */
+.artikel-inner{max-width:720px;margin:0 auto;}
+.artikel-hero{border-radius:18px;overflow:hidden;margin-bottom:26px;aspect-ratio:16/9;}
+.artikel-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.artikel-title{font-size:clamp(26px,5vw,38px);font-weight:900;color:var(--blueDark);
+  letter-spacing:-.6px;line-height:1.15;}
+.artikel-meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:14px;
+  margin:12px 0 28px;padding-bottom:20px;border-bottom:1px solid var(--line,#e2e8f0);}
+.artikel-body{font-size:16.5px;line-height:1.85;color:var(--ink);}
+.artikel-body p{margin:0 0 20px;}
+
 /* ===== Kongsi WhatsApp ===== */
 .wa-share{display:inline-flex;align-items:center;gap:4px;margin-left:10px;
   padding:3px 10px;border-radius:999px;background:#25d36615;color:#15803d;

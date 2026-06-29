@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 // Security headers applied to every route. These harden against clickjacking,
 // MIME sniffing, referrer leakage and force HTTPS. CSP is intentionally
@@ -29,6 +30,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root to this folder so Turbopack ignores the stray
+  // package-lock.json in the home directory (silences the lockfile warning).
+  turbopack: {
+    root: path.join(__dirname),
+  },
   async headers() {
     return [
       {

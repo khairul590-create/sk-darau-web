@@ -63,3 +63,20 @@ export type SchoolDocument = {
   is_public: boolean;
   created_at: string;
 };
+
+export type Writing = {
+  id: string;
+  author: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  external_url: string | null; // jika diisi: kad lompat keluar (pautan luar)
+  image_url: string | null;
+  emoji: string;
+  gradient: string;
+  is_published: boolean;
+  publish_date: string; // ISO date (YYYY-MM-DD)
+  sort_order: number;
+  created_at?: string;
+};
