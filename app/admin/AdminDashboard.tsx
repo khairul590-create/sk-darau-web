@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 import { formatDateBM, initials } from "@/lib/format";
 import type {
+  Achievement,
   Announcement,
   GalleryItem,
   Message,
@@ -15,7 +16,9 @@ import type {
   Writing,
 } from "@/lib/types";
 
-type Tab = "makluman" | "galeri" | "acara" | "tulisan" | "warga" | "dokumen" | "mesej" | "tetapan";
+type Tab = "makluman" | "galeri" | "acara" | "kejayaan" | "tulisan" | "warga" | "dokumen" | "mesej" | "tetapan";
+
+const ACHV_LEVELS = ["Sekolah", "Daerah", "Negeri", "Kebangsaan", "Antarabangsa"];
 
 const STAFF_CATEGORIES: { value: Staff["category"]; label: string }[] = [
   { value: "gb", label: "Guru Besar" },
@@ -79,6 +82,7 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [events, setEvents] = useState<SchoolEvent[]>([]);
   const [writings, setWritings] = useState<Writing[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [docs, setDocs] = useState<SchoolDocument[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -92,7 +96,7 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
   };
 
   const loadAll = useCallback(async () => {
-    const [a, g, ev, w, st, d, m, p, s] = await Promise.all([
+    const [a, g, ev, w, st, d, m, p, s, ac] = await Promise.all([
       sb.from("announcements").select("*").order("date", { ascending: false }),
       sb.from("gallery").select("*").order("sort_order", { ascending: true }),
       sb.from("events").select("*").order("date", { ascending: true }),
@@ -102,12 +106,14 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
       sb.from("messages").select("*").order("created_at", { ascending: false }),
       sb.from("portal_links").select("*").order("sort_order", { ascending: true }),
       sb.from("site_settings").select("key,value"),
+      sb.from("achievements").select("*").order("sort_order", { ascending: true }),
     ]);
     if (a.data) setAnns(a.data as Announcement[]);
     if (g.data) setGallery(g.data as GalleryItem[]);
     if (ev.data) setEvents(ev.data as SchoolEvent[]);
     if (w.data) setWritings(w.data as Writing[]);
     if (st.data) setStaff(st.data as Staff[]);
+    if (ac.data) setAchievements(ac.data as Achievement[]);
     if (d.data) setDocs(d.data as SchoolDocument[]);
     if (m.data) setMessages(m.data as Message[]);
     if (p.data) setPortal(p.data as PortalLink[]);
@@ -151,6 +157,7 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
         <button className={`admin-tab${tab === "makluman" ? " active" : ""}`} onClick={() => setTab("makluman")}>📢 Makluman</button>
         <button className={`admin-tab${tab === "galeri" ? " active" : ""}`} onClick={() => setTab("galeri")}>🖼️ Galeri</button>
         <button className={`admin-tab${tab === "acara" ? " active" : ""}`} onClick={() => setTab("acara")}>📅 Acara</button>
+        <button className={`admin-tab${tab === "kejayaan" ? " active" : ""}`} onClick={() => setTab("kejayaan")}>🏆 Kejayaan</button>
         <button className={`admin-tab${tab === "tulisan" ? " active" : ""}`} onClick={() => setTab("tulisan")}>✍️ Tulisan</button>
         <button className={`admin-tab${tab === "warga" ? " active" : ""}`} onClick={() => setTab("warga")}>👥 Warga</button>
         <button className={`admin-tab${tab === "dokumen" ? " active" : ""}`} onClick={() => setTab("dokumen")}>📄 Dokumen</button>
@@ -161,6 +168,7 @@ export default function AdminDashboard({ userEmail }: { userEmail: string }) {
       {tab === "makluman" && <MaklumanTab sb={sb} anns={anns} reload={loadAll} flash={flash} />}
       {tab === "galeri" && <GaleriTab sb={sb} gallery={gallery} reload={loadAll} flash={flash} />}
       {tab === "acara" && <AcaraTab sb={sb} events={events} reload={loadAll} flash={flash} />}
+      {tab === "kejayaan" && <KejayaanTab sb={sb} achievements={achievements} reload={loadAll} flash={flash} />}
       {tab === "tulisan" && <TulisanTab sb={sb} writings={writings} reload={loadAll} flash={flash} />}
       {tab === "warga" && <WargaTab sb={sb} staff={staff} reload={loadAll} flash={flash} />}
       {tab === "dokumen" && <DokumenTab sb={sb} docs={docs} reload={loadAll} flash={flash} />}
@@ -509,6 +517,182 @@ function AcaraTab({ sb, events, reload, flash }: {
                 <div style={{ display: "flex", gap: 8 }}>
                   <button className="btn btn-sm btn-ghost" onClick={() => edit(ev)}>Edit</button>
                   <button className="btn btn-sm btn-danger" onClick={() => del(ev.id)}>Padam</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ---------------- KEJAYAAN ---------------- */
+const ACHV_GRADIENTS = [
+  "linear-gradient(145deg,#d4af37,#b8860b)",
+  "linear-gradient(145deg,#f59e0b,#d97706)",
+  "linear-gradient(145deg,#3b82f6,#1d4ed8)",
+  "linear-gradient(145deg,#10b981,#047857)",
+  "linear-gradient(145deg,#8b5cf6,#6d28d9)",
+  "linear-gradient(145deg,#ef4444,#b91c1c)",
+];
+
+function KejayaanTab({ sb, achievements, reload, flash }: {
+  sb: SB; achievements: Achievement[]; reload: () => Promise<void>; flash: (t: string) => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const empty = {
+    title: "", recipient: "", level: "Daerah", descr: "",
+    emoji: "🏆", gradient: ACHV_GRADIENTS[0], date: today, is_active: true,
+  };
+  const [form, setForm] = useState(empty);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function save() {
+    if (!form.title.trim()) return flash("Sila isi tajuk kejayaan.");
+    setBusy(true);
+    try {
+      let image_url: string | null = editId
+        ? (achievements.find((x) => x.id === editId)?.image_url ?? null)
+        : null;
+      if (file) {
+        const compressed = await compressImage(file);
+        const path = `${Date.now()}-${Math.round(Math.random() * 1e6)}.jpg`;
+        const up = await sb.storage.from("achievements").upload(path, compressed, { upsert: false, contentType: "image/jpeg" });
+        if (up.error) { flash("Gagal muat naik gambar."); setBusy(false); return; }
+        image_url = sb.storage.from("achievements").getPublicUrl(path).data.publicUrl;
+      }
+      const payload = {
+        title: form.title.trim(), recipient: form.recipient.trim(), level: form.level,
+        descr: form.descr.trim(), image_url, emoji: form.emoji || "🏆",
+        gradient: form.gradient, date: form.date, is_active: form.is_active,
+      };
+      if (editId) {
+        const { error } = await sb.from("achievements").update(payload).eq("id", editId);
+        if (error) { flash("Gagal kemaskini."); setBusy(false); return; }
+        flash("Kejayaan dikemaskini.");
+      } else {
+        const sort_order = (achievements.at(-1)?.sort_order ?? 0) + 1;
+        const { error } = await sb.from("achievements").insert({ ...payload, sort_order });
+        if (error) { flash("Gagal tambah."); setBusy(false); return; }
+        flash("Kejayaan ditambah.");
+      }
+      setForm(empty); setEditId(null); setFile(null);
+      const inp = document.getElementById("kejayaan-file-input") as HTMLInputElement;
+      if (inp) inp.value = "";
+      await reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function edit(x: Achievement) {
+    setEditId(x.id);
+    setFile(null);
+    setForm({
+      title: x.title, recipient: x.recipient, level: x.level, descr: x.descr,
+      emoji: x.emoji || "🏆", gradient: x.gradient || ACHV_GRADIENTS[0],
+      date: x.date, is_active: x.is_active,
+    });
+  }
+
+  async function del(x: Achievement) {
+    if (!confirm("Padam kejayaan ini?")) return;
+    if (x.image_url) {
+      const path = x.image_url.split("/achievements/")[1];
+      if (path) await sb.storage.from("achievements").remove([decodeURIComponent(path)]);
+    }
+    const { error } = await sb.from("achievements").delete().eq("id", x.id);
+    if (error) return flash("Gagal padam.");
+    flash("Kejayaan dipadam."); await reload();
+  }
+
+  return (
+    <>
+      <div className="admin-card">
+        <h2>{editId ? "Edit Kejayaan" : "Tambah Kejayaan"}</h2>
+        <div className="muted-note" style={{ marginBottom: 12 }}>Dipapar di <strong>/kejayaan</strong> (Dinding Kejayaan). Pamer pencapaian murid, guru atau pasukan.</div>
+        <div className="field">
+          <label>Tajuk Kejayaan</label>
+          <input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="cth: Johan Pertandingan Robotik" />
+        </div>
+        <div className="admin-row">
+          <div className="field">
+            <label>Penerima (nama murid/guru/pasukan)</label>
+            <input value={form.recipient} onChange={(e) => set("recipient", e.target.value)} placeholder="cth: Pasukan Robotik SK Darau" />
+          </div>
+          <div className="field">
+            <label>Peringkat</label>
+            <select value={form.level} onChange={(e) => set("level", e.target.value)}>
+              {ACHV_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="field">
+          <label>Penerangan (pilihan)</label>
+          <input value={form.descr} onChange={(e) => set("descr", e.target.value)} placeholder="Maklumat ringkas pencapaian..." />
+        </div>
+        <div className="admin-row">
+          <div className="field">
+            <label>Tarikh</label>
+            <input type="date" value={form.date} onChange={(e) => set("date", e.target.value)} />
+          </div>
+          <div className="field" style={{ maxWidth: 120 }}>
+            <label>Emoji</label>
+            <input value={form.emoji} onChange={(e) => set("emoji", e.target.value)} placeholder="🏆" />
+          </div>
+        </div>
+        <div className="admin-row">
+          <div className="field">
+            <label>Gambar (pilihan — JPG/PNG)</label>
+            <input id="kejayaan-file-input" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <div className="muted-note">Tiada gambar → emoji + warna digunakan.</div>
+          </div>
+          <div className="field">
+            <label>Warna Kad</label>
+            <GradientPicker value={form.gradient} onChange={(g) => set("gradient", g)} />
+          </div>
+        </div>
+        <div className="field">
+          <label>Status</label>
+          <select value={form.is_active ? "true" : "false"} onChange={(e) => set("is_active", e.target.value === "true")}>
+            <option value="true">Aktif (papar di website)</option>
+            <option value="false">Tidak Aktif (sorok)</option>
+          </select>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="btn btn-submit btn-sm" onClick={save} disabled={busy}>{busy ? "Menyimpan..." : editId ? "Simpan Perubahan" : "Tambah Kejayaan"}</button>
+          {editId && <button className="btn btn-ghost btn-sm" onClick={() => { setEditId(null); setForm(empty); setFile(null); }}>Batal</button>}
+        </div>
+      </div>
+
+      <div className="admin-card">
+        <h2>Senarai Kejayaan ({achievements.length})</h2>
+        {achievements.length === 0 ? <div className="admin-empty">Tiada kejayaan.</div> : (
+          <ul className="admin-list">
+            {achievements.map((x) => (
+              <li key={x.id}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 46, height: 46, borderRadius: 10, background: x.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, overflow: "hidden", flexShrink: 0 }}>
+                    {x.image_url ? <img src={x.image_url} alt={x.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : x.emoji}
+                  </div>
+                  <div>
+                    <div className="al-main">
+                      {!x.is_active && <span className="pill-unread" style={{ background: "#94a3b8" }}></span>}
+                      {x.title}
+                    </div>
+                    <div className="al-sub">
+                      {x.level}{x.recipient ? ` · ${x.recipient}` : ""} · {formatDateBM(x.date)}
+                      {!x.is_active && <span style={{ color: "#b91c1c", fontWeight: 700 }}> · Disorok</span>}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn btn-sm btn-ghost" onClick={() => edit(x)}>Edit</button>
+                  <button className="btn btn-sm btn-danger" onClick={() => del(x)}>Padam</button>
                 </div>
               </li>
             ))}

@@ -1,6 +1,7 @@
 import { createSupabaseAnon } from "./supabase/server";
 import { isSupabaseConfigured } from "./supabase/config";
 import {
+  FALLBACK_ACHIEVEMENTS,
   FALLBACK_ANNOUNCEMENTS,
   FALLBACK_DOCUMENTS,
   FALLBACK_EVENTS,
@@ -11,6 +12,7 @@ import {
   FALLBACK_WRITINGS,
 } from "./fallback";
 import type {
+  Achievement,
   Announcement,
   GalleryItem,
   PortalLink,
@@ -132,6 +134,23 @@ export async function getWritings(): Promise<Writing[]> {
     return data as Writing[];
   } catch {
     return FALLBACK_WRITINGS;
+  }
+}
+
+export async function getAchievements(): Promise<Achievement[]> {
+  if (!isSupabaseConfigured) return FALLBACK_ACHIEVEMENTS;
+  try {
+    const sb = createSupabaseAnon();
+    const { data } = await sb
+      .from("achievements")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("date", { ascending: false });
+    if (!data || data.length === 0) return FALLBACK_ACHIEVEMENTS;
+    return data as Achievement[];
+  } catch {
+    return FALLBACK_ACHIEVEMENTS;
   }
 }
 

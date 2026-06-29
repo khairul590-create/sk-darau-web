@@ -64,6 +64,21 @@ export type SchoolDocument = {
   created_at: string;
 };
 
+export type Achievement = {
+  id: string;
+  title: string;
+  recipient: string;
+  level: string;
+  descr: string;
+  image_url: string | null;
+  emoji: string;
+  gradient: string;
+  date: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at?: string;
+};
+
 export type StaffCategory = "gb" | "pk" | "guru" | "staf";
 
 export type Staff = {

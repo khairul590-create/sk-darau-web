@@ -1,4 +1,4 @@
-import type { Announcement, GalleryItem, PortalLink, SchoolDocument, SchoolEvent, SiteSettings, Staff, Writing } from "./types";
+import type { Achievement, Announcement, GalleryItem, PortalLink, SchoolDocument, SchoolEvent, SiteSettings, Staff, Writing } from "./types";
 
 // Default content ported from SKDarauWebsite_V16.html.
 // Used when Supabase is not configured OR a table is empty, so the site
@@ -58,6 +58,8 @@ export const FALLBACK_DOCUMENTS: SchoolDocument[] = [];
 export const FALLBACK_WRITINGS: Writing[] = [];
 
 export const FALLBACK_STAFF: Staff[] = [];
+
+export const FALLBACK_ACHIEVEMENTS: Achievement[] = [];
 
 export const KPM_LINKS = [
   { emoji: "📊", label: "APDM", url: "https://apdm.moe.gov.my/" },
