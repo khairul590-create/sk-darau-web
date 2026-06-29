@@ -318,7 +318,63 @@ function MaklumanTab({ sb, anns, reload, flash }: {
           </ul>
         )}
       </div>
+
+      <PushSender flash={flash} />
     </>
+  );
+}
+
+/* ---------------- PUSH NOTIFICATION SENDER ---------------- */
+function PushSender({ flash }: { flash: (t: string) => void }) {
+  const vapidSet = !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const [title, setTitle] = useState("SK Darau");
+  const [body, setBody] = useState("");
+  const [url, setUrl] = useState("/");
+  const [busy, setBusy] = useState(false);
+
+  async function send() {
+    if (!body.trim()) return flash("Sila isi mesej notifikasi.");
+    if (!confirm("Hantar notifikasi ke SEMUA peranti yang melanggan?")) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title.trim(), body: body.trim(), url: url.trim() || "/" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (data?.error === "vapid_missing") return flash("Kunci VAPID belum diset (lihat schema-push.sql).");
+        return flash("Gagal hantar notifikasi.");
+      }
+      flash(`Notifikasi dihantar: ${data.sent ?? 0} berjaya, ${data.failed ?? 0} gagal.`);
+      setBody("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="admin-card">
+      <h2>🔔 Hantar Notifikasi Push</h2>
+      <div className="muted-note" style={{ marginBottom: 12 }}>
+        Hantar notifikasi serta-merta ke peranti ibu bapa yang telah klik &quot;Aktifkan Notifikasi&quot;.
+        {!vapidSet && <span style={{ color: "#b91c1c", fontWeight: 700 }}> Kunci VAPID belum diset — lihat <strong>supabase/schema-push.sql</strong> untuk arahan.</span>}
+      </div>
+      <div className="field">
+        <label>Tajuk</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="SK Darau" />
+      </div>
+      <div className="field">
+        <label>Mesej</label>
+        <input value={body} onChange={(e) => setBody(e.target.value)} placeholder="cth: Makluman baru: Mesyuarat PIBG esok 8 pagi" />
+      </div>
+      <div className="field">
+        <label>Pautan bila diklik (pilihan)</label>
+        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="/" />
+      </div>
+      <button className="btn btn-submit btn-sm" onClick={send} disabled={busy}>{busy ? "Menghantar..." : "Hantar ke Semua"}</button>
+    </div>
   );
 }
 

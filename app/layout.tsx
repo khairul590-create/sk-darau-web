@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESC } from "@/lib/site";
+import AppActions from "./components/AppActions";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#1e3a8a",
 };
 
 export default function RootLayout({
@@ -31,7 +33,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ms">
-      <body>{children}</body>
+      <body>
+        {children}
+        <AppActions />
+      </body>
     </html>
   );
 }
