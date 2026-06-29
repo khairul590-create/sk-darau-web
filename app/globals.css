@@ -361,6 +361,47 @@ img{max-width:100%;display:block;}
 .artikel-body{font-size:16.5px;line-height:1.85;color:var(--ink);}
 .artikel-body p{margin:0 0 20px;}
 
+/* ===== Warga Sekolah (pentadbir & guru) ===== */
+.warga-inner{max-width:1040px;margin:0 auto;}
+.wg-section{margin-bottom:44px;}
+.wg-cat-title{font-size:13px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--blue);text-align:center;margin-bottom:24px;position:relative;}
+.wg-cat-title::before,.wg-cat-title::after{content:"";position:absolute;top:50%;width:18%;
+  height:1px;background:linear-gradient(90deg,transparent,var(--line,#cbd5e1));}
+.wg-cat-title::before{left:8%;transform:scaleX(-1);}
+.wg-cat-title::after{right:8%;}
+
+.wg-card{display:flex;flex-direction:column;align-items:center;text-align:center;
+  background:#fff;border:1px solid var(--line,#e2e8f0);border-radius:18px;padding:22px 16px;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;}
+.wg-card:hover{transform:translateY(-6px);border-color:var(--blue);
+  box-shadow:0 16px 36px rgba(37,99,235,.16);}
+.wg-name{font-size:15px;font-weight:800;color:var(--blueDark);line-height:1.3;margin-top:14px;}
+.wg-position{font-size:12.5px;font-weight:700;color:var(--blue);margin-top:5px;}
+.wg-subject{font-size:11.5px;color:var(--muted);margin-top:4px;}
+
+.wg-avatar{border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(30,58,138,.22);}
+.wg-avatar img{width:100%;height:100%;object-fit:cover;}
+.wg-initials{color:#fff;font-weight:900;letter-spacing:.5px;}
+.wg-avatar-md{width:96px;height:96px;}
+.wg-avatar-md .wg-initials{font-size:34px;}
+.wg-avatar-lg{width:150px;height:150px;border:4px solid #fff;}
+.wg-avatar-lg .wg-initials{font-size:52px;}
+
+/* GB featured — kad besar tengah */
+.wg-featured-row{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;}
+.wg-card-featured{padding:32px 40px;border:1px solid var(--line,#e2e8f0);
+  background:linear-gradient(180deg,#fff,#f4f8ff);border-radius:22px;min-width:280px;}
+.wg-card-featured .wg-name{font-size:21px;margin-top:18px;}
+.wg-card-featured .wg-position{font-size:14px;
+  background:var(--blue);color:#fff;padding:4px 16px;border-radius:999px;margin-top:10px;}
+
+/* Grid biasa */
+.wg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:18px;}
+.wg-grid-pk{max-width:760px;margin:0 auto;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
+
 /* ===== Kongsi WhatsApp ===== */
 .wa-share{display:inline-flex;align-items:center;gap:4px;margin-left:10px;
   padding:3px 10px;border-radius:999px;background:#25d36615;color:#15803d;

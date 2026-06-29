@@ -7,6 +7,7 @@ import {
   FALLBACK_GALLERY,
   FALLBACK_PORTAL,
   FALLBACK_SETTINGS,
+  FALLBACK_STAFF,
   FALLBACK_WRITINGS,
 } from "./fallback";
 import type {
@@ -16,6 +17,7 @@ import type {
   SchoolDocument,
   SchoolEvent,
   SiteSettings,
+  Staff,
   Writing,
 } from "./types";
 
@@ -130,6 +132,22 @@ export async function getWritings(): Promise<Writing[]> {
     return data as Writing[];
   } catch {
     return FALLBACK_WRITINGS;
+  }
+}
+
+export async function getStaff(): Promise<Staff[]> {
+  if (!isSupabaseConfigured) return FALLBACK_STAFF;
+  try {
+    const sb = createSupabaseAnon();
+    const { data } = await sb
+      .from("staff")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+    if (!data || data.length === 0) return FALLBACK_STAFF;
+    return data as Staff[];
+  } catch {
+    return FALLBACK_STAFF;
   }
 }
 

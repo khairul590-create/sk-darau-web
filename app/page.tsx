@@ -54,6 +54,7 @@ export default async function Home() {
             <a href="#akses">Portal</a>
             <a href="#galeri">Galeri</a>
             <a href="#makluman">Makluman</a>
+            <a href="/guru">Guru</a>
             <a href="/tulisan">Tulisan</a>
             <a href="#hubungi">Hubungi</a>
           </div>
@@ -230,6 +231,9 @@ export default async function Home() {
           </a><br />
           <a href="/tulisan" style={{ color: "var(--gold)", fontWeight: 700, marginTop: 4, display: "inline-block" }}>
             ✍️ Tulisan Guru →
+          </a><br />
+          <a href="/guru" style={{ color: "var(--gold)", fontWeight: 700, marginTop: 4, display: "inline-block" }}>
+            👥 Barisan Pentadbir & Guru →
           </a>
         </div>
         <div className="footer-div"></div>

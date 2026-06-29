@@ -14,3 +14,14 @@ export function formatDateBM(iso: string): string {
   const month = BM_MONTHS[monthIdx] ?? m[2];
   return `${day} ${month} ${year}`;
 }
+
+// Huruf awalan nama untuk fallback avatar bila tiada gambar (maks 2 huruf).
+// Buang gelaran/penghubung lazim (bin, binti, a/l, Hj, Tn...) dahulu.
+export function initials(name: string): string {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter((p) => !/^(bin|binti|bt|a\/l|a\/p|hj|hjh|tn|pn|cik|dr)\.?$/i.test(p));
+  const pick = parts.length ? parts : name.trim().split(/\s+/);
+  return ((pick[0]?.[0] ?? "") + (pick[1]?.[0] ?? "")).toUpperCase() || "?";
+}
