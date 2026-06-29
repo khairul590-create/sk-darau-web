@@ -1,7 +1,9 @@
+import Link from "next/link";
 import SiteScripts from "./components/SiteScripts";
 import ContactModal from "./components/ContactModal";
 import EmergencyBanner from "./components/EmergencyBanner";
 import ShareWA from "./components/ShareWA";
+import GalleryView from "./components/GalleryView";
 import {
   getAnnouncements,
   getEvents,
@@ -52,7 +54,7 @@ export default async function Home() {
           <div className="nav-links" id="navLinks">
             <a href="#utama" className="active">Utama</a>
             <a href="#akses">Portal</a>
-            <a href="#galeri">Galeri</a>
+            <a href="/galeri">Galeri</a>
             <a href="#makluman">Makluman</a>
             <a href="/guru">Guru</a>
             <a href="/tulisan">Tulisan</a>
@@ -149,25 +151,11 @@ export default async function Home() {
           <div className="sec-kicker">Sorotan Aktiviti</div>
           <h2 className="sec-title">Galeri Sekolah</h2>
         </div>
-        <div className="gal-track">
-          {gallery.map((g) => (
-            <div key={g.id} className="gframe" style={{ background: g.gradient }}>
-              {g.image_url ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img className="gf-img" src={g.image_url} alt={g.title} />
-              ) : (
-                <div className="gf-em">{g.emoji}</div>
-              )}
-              <div className="gf-ov"></div>
-              <div className="gf-c">
-                <span className="gf-tag">{g.tag}</span>
-                <div className="gf-t">{g.title}</div>
-                <div className="gf-s">{g.subtitle}</div>
-              </div>
-            </div>
-          ))}
+        <GalleryView items={gallery} variant="track" />
+        <div className="gal-hint">← Seret · klik gambar untuk besarkan →</div>
+        <div style={{ textAlign: "center", marginTop: 20 }}>
+          <Link href="/galeri" className="btn btn-gold">Lihat Semua Galeri →</Link>
         </div>
-        <div className="gal-hint">← Seret untuk lihat lebih banyak →</div>
       </div>
 
       {/* ANNOUNCEMENTS */}

@@ -64,12 +64,47 @@ export default function SiteScripts() {
     );
     document.querySelectorAll(".reveal").forEach((el) => revObs.observe(el));
 
+    // Count-up animation for hero stats. Only pure-number values animate
+    // (e.g. "1940", "20"); mixed values like "A+" / "XBA4007" stay as-is.
+    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const animateCount = (el: HTMLElement, target: number, suffix: string) => {
+      const dur = 1400;
+      let start: number | null = null;
+      const step = (ts: number) => {
+        if (start === null) start = ts;
+        const p = Math.min((ts - start) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+        el.textContent = Math.round(eased * target).toLocaleString("en-US") + suffix;
+        if (p < 1) requestAnimationFrame(step);
+        else el.textContent = target.toLocaleString("en-US") + suffix;
+      };
+      requestAnimationFrame(step);
+    };
+    const countObs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          const el = e.target as HTMLElement;
+          countObs.unobserve(el);
+          const raw = (el.textContent ?? "").trim();
+          const m = /^(\d[\d,]*)(\D*)$/.exec(raw); // leading number + optional suffix (e.g. "+")
+          if (!m || prefersReduced) return;
+          const target = Number(m[1].replace(/,/g, ""));
+          if (!Number.isFinite(target) || target === 0) return;
+          animateCount(el, target, m[2] ?? "");
+        });
+      },
+      { threshold: 0.6 }
+    );
+    document.querySelectorAll(".stat .num").forEach((el) => countObs.observe(el));
+
     return () => {
       window.removeEventListener("scroll", onScroll);
       burger?.removeEventListener("click", toggleMenu);
       linkEls.forEach((a) => a.removeEventListener("click", closeMenu));
       obsActive.disconnect();
       revObs.disconnect();
+      countObs.disconnect();
     };
   }, []);
 

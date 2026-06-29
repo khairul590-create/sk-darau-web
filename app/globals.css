@@ -402,6 +402,45 @@ img{max-width:100%;display:block;}
 .wg-grid-pk{max-width:760px;margin:0 auto;
   grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
 
+/* ===== Galeri: lightbox + grid penuh ===== */
+.galeri-inner{max-width:1100px;margin:0 auto;}
+.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;}
+.gal-grid .gframe{width:100%;height:280px;}
+.gframe-zoom{cursor:pointer;}
+.gframe-zoom:hover .gf-img{transform:scale(1.06);}
+.gframe .gf-img{transition:transform .4s ease;}
+.gf-zoom{position:absolute;top:12px;right:12px;z-index:3;width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:15px;
+  opacity:0;transform:scale(.7);transition:opacity .25s ease,transform .25s ease;}
+.gframe-zoom:hover .gf-zoom{opacity:1;transform:scale(1);}
+
+.lb-overlay{position:fixed;inset:0;z-index:300;background:rgba(6,11,28,.92);
+  backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;
+  animation:lbfade .2s ease;}
+@keyframes lbfade{from{opacity:0}to{opacity:1}}
+.lb-figure{margin:0;max-width:min(1000px,92vw);max-height:88vh;display:flex;flex-direction:column;
+  align-items:center;gap:14px;}
+.lb-figure img{max-width:100%;max-height:74vh;object-fit:contain;border-radius:14px;
+  box-shadow:0 24px 70px rgba(0,0,0,.6);}
+.lb-cap{text-align:center;color:#fff;}
+.lb-tag{display:inline-block;background:linear-gradient(135deg,var(--gold),var(--goldBright));
+  color:var(--blueNight);font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+  padding:4px 12px;border-radius:999px;}
+.lb-title{font-size:20px;font-weight:900;margin-top:8px;letter-spacing:-.4px;}
+.lb-sub{font-size:13.5px;color:rgba(255,255,255,.8);margin-top:3px;}
+.lb-count{font-size:12px;color:rgba(255,255,255,.55);margin-top:8px;font-weight:700;letter-spacing:1px;}
+.lb-close{position:absolute;top:18px;right:20px;width:44px;height:44px;border-radius:12px;border:none;
+  background:rgba(255,255,255,.12);color:#fff;font-size:26px;cursor:pointer;line-height:1;
+  transition:background .2s ease;}
+.lb-close:hover{background:rgba(255,255,255,.25);}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:54px;height:54px;border-radius:50%;
+  border:none;background:rgba(255,255,255,.12);color:#fff;font-size:34px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .2s ease;}
+.lb-nav:hover{background:rgba(255,255,255,.28);}
+.lb-prev{left:16px;}
+.lb-next{right:16px;}
+@media(max-width:560px){.lb-nav{width:44px;height:44px;font-size:26px;}.lb-prev{left:6px;}.lb-next{right:6px;}}
+
 /* ===== Kongsi WhatsApp ===== */
 .wa-share{display:inline-flex;align-items:center;gap:4px;margin-left:10px;
   padding:3px 10px;border-radius:999px;background:#25d36615;color:#15803d;
