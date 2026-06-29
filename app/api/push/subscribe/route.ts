@@ -4,12 +4,31 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export const runtime = "nodejs";
 
+// Per-IP sliding-window rate limit so a single host can't flood the
+// subscriptions table. Defence-in-depth alongside the RLS payload bounds.
+const RL_MAX = 10;
+const RL_WINDOW_MS = 10 * 60 * 1000;
+const hits = new Map<string, number[]>();
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  const arr = (hits.get(ip) ?? []).filter((t) => now - t < RL_WINDOW_MS);
+  arr.push(now);
+  hits.set(ip, arr);
+  if (hits.size > 5000) hits.clear();
+  return arr.length > RL_MAX;
+}
+
 // Store a browser's web-push subscription. Public endpoint (any device can
-// subscribe). RLS bounds the payload at the database level. Idempotent on
-// endpoint so re-subscribing the same device doesn't duplicate rows.
+// subscribe). RLS bounds the payload at the database level. Insert-only:
+// re-subscribing the same endpoint is a no-op (handled below).
 export async function POST(request: Request) {
   if (!isSupabaseConfigured) {
     return NextResponse.json({ error: "not_configured" }, { status: 503 });
+  }
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  if (rateLimited(ip)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
   let body: unknown;
   try {
@@ -23,6 +42,10 @@ export async function POST(request: Request) {
   const auth = sub?.keys?.auth;
   if (!endpoint || !p256dh || !auth) {
     return NextResponse.json({ error: "incomplete" }, { status: 400 });
+  }
+  // Real push endpoints are always https URLs from the browser's push service.
+  if (!/^https:\/\//i.test(endpoint) || endpoint.length > 1000) {
+    return NextResponse.json({ error: "bad_endpoint" }, { status: 400 });
   }
 
   const db = createSupabaseAnon();

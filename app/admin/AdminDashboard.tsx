@@ -781,7 +781,11 @@ function TulisanTab({ sb, writings, reload, flash }: {
     if (!form.author.trim()) return flash("Sila isi nama penulis.");
     if (!form.title.trim()) return flash("Sila isi tajuk.");
     if (form.type === "teks" && !form.content.trim()) return flash("Sila isi kandungan tulisan.");
-    if (form.type === "pautan" && !form.external_url.trim()) return flash("Sila isi pautan luar.");
+    if (form.type === "pautan") {
+      const u = form.external_url.trim();
+      if (!u) return flash("Sila isi pautan luar.");
+      if (!/^https?:\/\//i.test(u)) return flash("Pautan mesti bermula dengan http:// atau https://");
+    }
     setBusy(true);
     try {
       // Gambar pilihan — muat naik & compress macam galeri.

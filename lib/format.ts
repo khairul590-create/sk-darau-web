@@ -15,6 +15,19 @@ export function formatDateBM(iso: string): string {
   return `${day} ${month} ${year}`;
 }
 
+// Only allow http(s) external links. Blocks javascript:, data:, etc. so a bad
+// stored URL can never become a script-executing href. Returns null if unsafe.
+export function safeHttpUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  try {
+    const u = new URL(trimmed);
+    return u.protocol === "http:" || u.protocol === "https:" ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+
 // Huruf awalan nama untuk fallback avatar bila tiada gambar (maks 2 huruf).
 // Buang gelaran/penghubung lazim (bin, binti, a/l, Hj, Tn...) dahulu.
 export function initials(name: string): string {

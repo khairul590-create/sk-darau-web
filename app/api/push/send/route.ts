@@ -20,6 +20,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "vapid_missing" }, { status: 503 });
   }
 
+  // CSRF defence: this is a state-changing, cookie-authenticated POST, so
+  // reject cross-site requests. The Origin must match the request host.
+  const origin = request.headers.get("origin");
+  if (origin) {
+    const host = request.headers.get("host");
+    try {
+      if (new URL(origin).host !== host) {
+        return NextResponse.json({ error: "bad_origin" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "bad_origin" }, { status: 403 });
+    }
+  }
+
   // Auth gate: only an authenticated admin can broadcast.
   const sb = await createSupabaseServer();
   const { data: { user } } = await sb.auth.getUser();

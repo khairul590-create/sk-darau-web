@@ -74,9 +74,11 @@ export default function SiteScripts() {
         if (start === null) start = ts;
         const p = Math.min((ts - start) / dur, 1);
         const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
-        el.textContent = Math.round(eased * target).toLocaleString("en-US") + suffix;
+        // No thousands separators — keep raw digits so years (e.g. 1940) and
+        // codes don't gain a stray comma ("1,940").
+        el.textContent = String(Math.round(eased * target)) + suffix;
         if (p < 1) requestAnimationFrame(step);
-        else el.textContent = target.toLocaleString("en-US") + suffix;
+        else el.textContent = String(target) + suffix;
       };
       requestAnimationFrame(step);
     };

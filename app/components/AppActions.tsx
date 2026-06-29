@@ -23,10 +23,17 @@ export default function AppActions() {
   const [deferred, setDeferred] = useState<InstallEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [pushState, setPushState] = useState<"idle" | "on" | "busy">("idle");
+  const [pushSupported, setPushSupported] = useState(false);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     navigator.serviceWorker.register("/sw.js").catch(() => {});
+
+    setPushSupported(
+      "PushManager" in window &&
+      "Notification" in window &&
+      "serviceWorker" in navigator
+    );
 
     const onPrompt = (e: Event) => {
       e.preventDefault();
@@ -81,7 +88,7 @@ export default function AppActions() {
   }
 
   const showInstall = !!deferred && !installed;
-  const showPush = !!VAPID && pushState !== "on";
+  const showPush = !!VAPID && pushSupported && pushState !== "on";
   if (!showInstall && !showPush) return null;
 
   return (

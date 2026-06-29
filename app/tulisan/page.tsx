@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getWritings } from "@/lib/data";
-import { formatDateBM } from "@/lib/format";
+import { formatDateBM, safeHttpUrl } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +30,7 @@ export default async function TulisanPage() {
         ) : (
           <div className="tulisan-grid">
             {writings.map((w) => {
+              const ext = safeHttpUrl(w.external_url);
               const inner = (
                 <>
                   <div className="tw-media" style={{ background: w.gradient }}>
@@ -39,7 +40,7 @@ export default async function TulisanPage() {
                     ) : (
                       <div className="tw-em">{w.emoji}</div>
                     )}
-                    {w.external_url && <div className="tw-go">↗</div>}
+                    {ext && <div className="tw-go">↗</div>}
                   </div>
                   <div className="tw-body">
                     <div className="tw-title">{w.title}</div>
@@ -51,11 +52,11 @@ export default async function TulisanPage() {
                   </div>
                 </>
               );
-              return w.external_url ? (
+              return ext ? (
                 <a
                   key={w.id}
                   className="tw-card"
-                  href={w.external_url}
+                  href={ext}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
